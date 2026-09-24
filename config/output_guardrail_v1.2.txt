@@ -1,0 +1,181 @@
+output_guardrail_v1.2
+=====================
+
+ŹRÓDŁO
+------
+Finalna konfiguracja deterministycznej warstwy guardrails zastosowanej
+w eksperymencie AI-wingman. W implementacji produkcyjnej reguły te były
+zawarte bezpośrednio w main.py; niniejszy plik wyodrębnia je do celów
+reprodukowalności i dokumentacji.
+
+Wersja:
+output_guardrail_v1.2
+
+ZAKRES
+------
+Warstwa NIE jest ogólnym klasyfikatorem bezpieczeństwa ani moderacji.
+Kontroluje wyłącznie klasy błędów wykryte empirycznie podczas audytu
+rozwojowego i stress-testów.
+
+PIPELINE
+--------
+1. LLM generuje dokładnie trzy sugestie: neutral, warm, engaging.
+2. Każda sugestia przechodzi deterministyczną walidację.
+3. Jeżeli co najmniej jedna sugestia otrzyma flagę, wszystkie oznaczone
+   strategie są naprawiane w jednym dodatkowym wywołaniu LLM.
+4. Naprawione sugestie przechodzą ponowną walidację.
+5. Jeżeli po naprawie pozostaje co najmniej jedna flaga, cały wynik jest
+   odrzucany zgodnie z zasadą fail-closed i nie jest prezentowany
+   uczestnikowi w EXPERIMENT_MODE.
+6. Zdarzenia walidacji są zapisywane w guardrail_events.csv.
+
+FLAGI WALIDATORA
+----------------
+unsupported_first_person
+    Nieuzasadniona deklaracja pierwszoosobowa / autobiograficzna
+    przypisywana użytkownikowi.
+
+boundary_question
+    Pytanie zadane po wykryciu twardej granicy lub odmowy rozmówcy.
+
+boundary_reopening
+    Próba ponownego otwarcia rozmowy po wykryciu twardej granicy.
+
+WZORCE BLOKOWANE — NIEUZASADNIONA PIERWSZA OSOBA
+------------------------------------------------
+r"\bprzykro mi\b"
+r"\bcieszę się\b"
+r"\bmam nadzieję\b"
+r"\bmartwię się\b"
+r"\bjestem tutaj\b"
+r"\bbędę tutaj\b"
+r"\bjestem otwart[ya]\b"
+r"\bbędę otwart[ya]\b"
+r"\bchętnie\b"
+r"\bteż lubię\b"
+r"\blubię\b"
+r"\buwielbiam\b"
+r"\bzależy mi\b"
+r"\btęsknię\b"
+r"\bnie mogę się doczekać\b"
+r"\bciekaw jestem\b"
+r"\bciekawa jestem\b"
+r"\bjestem ciekaw[ay]?\b"
+r"\bdużo słyszałem\b"
+r"\bdużo słyszałam\b"
+r"\bsłyszałem\b"
+r"\bsłyszałam\b"
+r"\bnie planuję\b"
+r"\bnie mam planów\b"
+r"\bnie mam jeszcze planów\b"
+r"\bjeszcze tam nie byłem\b"
+r"\bjeszcze tam nie byłam\b"
+r"\bnie mogę powiedzieć\b"
+r"\bżyczę ci\b"
+r"\btrzymam kciuki\b"
+
+# Wzorce dodane po false negatives obserwowanych w v1.4.1:
+r"\bnie mam (?:jeszcze )?ulubion(?:ego|ej|ych|ą|y)\b"
+r"\bnie ma (?:jeszcze )?(?:konkretn(?:ych|ego|ej) )?plan(?:ów|u|y)\b"
+r"\bbrak (?:jeszcze )?(?:konkretn(?:ych|ego|ej) )?plan(?:ów|u|y)\b"
+
+# Parafrazy semantyczne obserwowane w v1.4.2:
+r"\bżyczę\b"
+r"\bciekawi mnie\b"
+r"\binteresuje mnie\b"
+r"\bwezmę to pod uwagę\b"
+r"\bpostaram się\b"
+
+TWARDE GRANICE / ODMOWY
+-----------------------
+r"\bpotrzebuję (trochę )?przestrzeni\b"
+r"\bwolę teraz nie pisać\b"
+r"\bnie chcę teraz pisać\b"
+r"\bnie chcę dalej pisać\b"
+r"\bnie chcę kontynuować\b"
+r"\bproszę[,]? nie pisz\b"
+r"\bzakończmy (tę )?(rozmowę|kontakt)\b"
+r"\bskończmy (tę )?(rozmowę|kontakt)\b"
+
+Dodatkowo kontekst jest traktowany jako twarda granica, jeżeli ostatnia
+wypowiedź Match zawiera "dzięki za rozmowę" oraz co najmniej jeden
+z sygnałów:
+- "nie czuję"
+- "nie chcę"
+- "nie jestem zainteres"
+- "nie powinniśmy się spotkać"
+
+WZORCE PONOWNEGO OTWARCIA ROZMOWY PO GRANICY
+---------------------------------------------
+r"\bdaj znać\b"
+r"\bgdy będziesz gotow"
+r"\bkiedy będziesz gotow"
+r"\bjeśli będziesz gotow"
+r"\bjestem tutaj\b"
+r"\bbędę tutaj\b"
+r"\bmoże kiedyś\b"
+
+REGUŁA WALIDACJI
+----------------
+Dla każdej sugestii:
+
+1. Tekst jest normalizowany do małych liter i pojedynczych odstępów.
+2. Jeżeli wykryto którykolwiek wzorzec z listy blokowanej:
+       flaga = unsupported_first_person
+3. Jeżeli ostatnia wypowiedź Match ustanawia twardą granicę:
+   a) obecność znaku "?" powoduje:
+       flaga = boundary_question
+   b) obecność wzorca ponownego otwarcia powoduje:
+       flaga = boundary_reopening
+4. Zwracana jest unikalna, posortowana lista flag.
+
+PROCEDURA NAPRAWCZA
+-------------------
+- Naprawiane są wyłącznie strategie oznaczone przez walidator.
+- Wszystkie oznaczone strategie są naprawiane w jednym zbiorczym
+  wywołaniu modelu.
+- Moduł naprawczy otrzymuje:
+  * zamrożone guidelines_v1.4,
+  * kontekst rozmowy,
+  * oryginalny tekst sugestii,
+  * wykryte flagi.
+- Naprawiony tekst musi zachować identyfikator strategii.
+- Po naprawie wykonywana jest ponowna walidacja deterministyczna.
+
+FAIL-CLOSED
+-----------
+Jeżeli po pojedynczej procedurze naprawczej co najmniej jedna sugestia
+nadal otrzymuje flagę, system zgłasza GuardrailValidationError i nie
+zwraca całego zestawu uczestnikowi w trybie eksperymentalnym.
+
+LOGOWANIE
+---------
+Dla każdej zakwestionowanej sugestii zapisywane są:
+- event_id
+- generation_id
+- trial_id
+- participant_id
+- scenario_id
+- response_strategy
+- original_text
+- initial_flags
+- repair_attempted
+- repaired_text
+- final_flags
+- final_status
+- created_at
+- model_name
+- prompt_version
+- guidelines_version
+- guardrail_version
+
+Możliwe final_status:
+- passed_after_repair
+- failed_after_repair
+
+ZAŁOŻENIE INTERPRETACYJNE
+-------------------------
+output_guardrail_v1.2 jest deterministyczną warstwą kontroli wzorców,
+a nie pełnym klasyfikatorem semantycznym. Nie gwarantuje eliminacji
+wszystkich niepożądanych zachowań; ma ograniczać określone, wcześniej
+zidentyfikowane klasy błędów w sposób przewidywalny i audytowalny.

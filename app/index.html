@@ -1,0 +1,1617 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI-wingman — badanie eksperymentalne</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --surface: #ffffff;
+      --surface-soft: #f0f2f5;
+      --text: #17191c;
+      --muted: #667085;
+      --border: #dfe3e8;
+      --accent: #20242a;
+      --accent-hover: #0f1114;
+      --danger: #b42318;
+      --danger-bg: #fef3f2;
+      --success: #067647;
+      --success-bg: #ecfdf3;
+      --warning: #b54708;
+      --warning-bg: #fffaeb;
+      --radius: 16px;
+      --shadow: 0 14px 40px rgba(16, 24, 40, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Verdana, Arial, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    .app-shell {
+      width: min(920px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 56px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .brand {
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      font-size: 20px;
+    }
+
+    .study-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 28px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      font-size: clamp(26px, 4vw, 38px);
+      line-height: 1.12;
+      letter-spacing: -0.035em;
+      margin-bottom: 14px;
+    }
+
+    h2 {
+      font-size: 22px;
+      margin-bottom: 10px;
+    }
+
+    h3 {
+      font-size: 16px;
+      margin-bottom: 12px;
+    }
+
+    p,
+    li,
+    label,
+    input,
+    select,
+    textarea,
+    button {
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .intro-copy {
+      max-width: 760px;
+      margin-bottom: 22px;
+    }
+
+    .info-box {
+      padding: 16px 18px;
+      border-radius: 12px;
+      background: var(--surface-soft);
+      margin: 18px 0;
+      color: #344054;
+    }
+
+    .info-box p:last-child {
+      margin-bottom: 0;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 22px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    .field label {
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid #cfd5dc;
+      border-radius: 10px;
+      padding: 11px 12px;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: #667085;
+      box-shadow: 0 0 0 3px rgba(102, 112, 133, 0.12);
+    }
+
+    textarea {
+      min-height: 118px;
+      resize: vertical;
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .checkbox-row input {
+      width: auto;
+      margin-top: 4px;
+    }
+
+    .btn {
+      border: 1px solid transparent;
+      border-radius: 10px;
+      padding: 11px 16px;
+      font-weight: 700;
+      transition: transform 0.08s ease, background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .btn:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+
+    .btn-primary {
+      color: white;
+      background: var(--accent);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent-hover);
+    }
+
+    .btn-secondary {
+      background: white;
+      border-color: #cfd5dc;
+      color: var(--text);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: #f8f9fb;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      border-color: transparent;
+      color: var(--muted);
+    }
+
+    .btn-danger-soft {
+      background: var(--danger-bg);
+      color: var(--danger);
+      border-color: #fecdca;
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .progress-wrap {
+      margin-bottom: 18px;
+    }
+
+    .progress-labels {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .progress-track {
+      height: 8px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: #e8ebef;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: var(--accent);
+      width: 0;
+      transition: width 0.25s ease;
+    }
+
+    .scenario-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .scenario-kicker {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+
+    .chat {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 18px;
+      background: var(--surface-soft);
+      border-radius: 14px;
+      margin: 18px 0;
+    }
+
+    .message-row {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+    }
+
+    .message-row.user {
+      align-items: flex-end;
+    }
+
+    .message-label {
+      font-size: 11px;
+      color: var(--muted);
+      padding: 0 4px;
+    }
+
+    .bubble {
+      max-width: min(78%, 620px);
+      padding: 11px 14px;
+      border-radius: 14px;
+      background: white;
+      border: 1px solid var(--border);
+      line-height: 1.5;
+    }
+
+    .message-row.user .bubble {
+      color: white;
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .instruction-box {
+      border-left: 4px solid #98a2b3;
+      padding: 12px 14px;
+      background: #fafafa;
+      border-radius: 0 10px 10px 0;
+      margin-bottom: 20px;
+    }
+
+    .instruction-box p {
+      margin: 0;
+    }
+
+    .ai-panel {
+      margin: 20px 0;
+      border-top: 1px solid var(--border);
+      padding-top: 20px;
+    }
+
+    .ai-note {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 14px;
+      color: #475467;
+    }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      padding: 14px 0;
+    }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid #d0d5dd;
+      border-top-color: #475467;
+      animation: spin 0.8s linear infinite;
+      flex: 0 0 auto;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .suggestions-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .suggestion-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 15px;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      min-height: 220px;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .suggestion-card.selected {
+      border-color: #667085;
+      box-shadow: 0 0 0 3px rgba(102, 112, 133, 0.1);
+    }
+
+    .strategy {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .suggestion-text {
+      flex: 1;
+      margin-bottom: 14px;
+      white-space: pre-wrap;
+    }
+
+    .suggestion-actions {
+      display: flex;
+      gap: 7px;
+    }
+
+    .suggestion-actions .btn {
+      flex: 1;
+      padding: 8px 10px;
+      font-size: 12px;
+    }
+
+    .own-answer {
+      margin-top: 12px;
+    }
+
+    .editor-wrap {
+      margin-top: 18px;
+    }
+
+    .editor-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 6px;
+    }
+
+    .rating-box {
+      margin-top: 18px;
+      padding: 16px;
+      border-radius: 12px;
+      background: var(--surface-soft);
+    }
+
+    .rating-scale {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .rating-option {
+      position: relative;
+    }
+
+    .rating-option input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .rating-option label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      border: 1px solid #cfd5dc;
+      border-radius: 9px;
+      background: white;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .rating-option input:checked + label {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .rating-anchors {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    .alert {
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin: 14px 0;
+      font-size: 13px;
+    }
+
+    .alert-error {
+      color: var(--danger);
+      background: var(--danger-bg);
+      border: 1px solid #fecdca;
+    }
+
+    .alert-success {
+      color: var(--success);
+      background: var(--success-bg);
+      border: 1px solid #abefc6;
+    }
+
+    .alert-warning {
+      color: var(--warning);
+      background: var(--warning-bg);
+      border: 1px solid #fedf89;
+    }
+
+    .finish {
+      text-align: center;
+      padding: 30px 10px 14px;
+    }
+
+    .finish-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 18px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: var(--success-bg);
+      color: var(--success);
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .researcher-note {
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    code {
+      background: #f2f4f7;
+      border-radius: 5px;
+      padding: 2px 5px;
+      font-size: 0.95em;
+    }
+
+    @media (max-width: 760px) {
+      .app-shell {
+        width: min(100% - 20px, 920px);
+        padding-top: 14px;
+      }
+
+      .card {
+        padding: 20px;
+      }
+
+      .form-grid,
+      .suggestions-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .suggestion-card {
+        min-height: 0;
+      }
+
+      .bubble {
+        max-width: 92%;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <div class="topbar">
+      <div class="brand">AI-wingman</div>
+      <div class="study-badge" id="studyBadge">Badanie eksperymentalne</div>
+    </div>
+
+    <!-- START / REGISTRATION -->
+    <section id="startScreen" class="card">
+      <h1>Badanie komunikacji tekstowej z wykorzystaniem AI</h1>
+      <p class="intro-copy muted">
+        W badaniu zobaczysz pięć krótkich sytuacji przypominających rozmowy w aplikacji randkowej.
+        Twoim zadaniem będzie przygotowanie jednej odpowiedzi do każdej sytuacji. W części zadań
+        mogą pojawić się sugestie systemu AI-wingman. Każdorazowo ostateczna treść wiadomości
+        należy do Ciebie.
+      </p>
+
+      <div class="info-box">
+        <p><strong>Ważne informacje</strong></p>
+        <p>
+          Badanie dotyczy sposobu formułowania krótkich wiadomości, a nie Twojego życia prywatnego.
+          Nie wpisuj prawdziwych danych osobowych ani informacji pozwalających Cię zidentyfikować.
+          Udział jest przeznaczony dla osób pełnoletnich.
+        </p>
+      </div>
+
+      <div id="startAlert" class="hidden"></div>
+
+      <div class="form-grid">
+        <div class="field">
+          <label for="participantId">Kod uczestnika</label>
+          <input id="participantId" type="text" maxlength="32" placeholder="np. P01" autocomplete="off" />
+          <span class="muted" style="font-size:11px;">Kod otrzymany od osoby prowadzącej badanie.</span>
+        </div>
+
+        <div class="field">
+          <label for="age">Wiek</label>
+          <input id="age" type="number" min="18" max="99" placeholder="np. 24" />
+        </div>
+
+        <div class="field">
+          <label for="datingExperience">Doświadczenie z aplikacjami randkowymi</label>
+          <select id="datingExperience">
+            <option value="">Wybierz…</option>
+            <option value="current">Korzystam obecnie</option>
+            <option value="previous">Korzystałem/am wcześniej</option>
+            <option value="none">Nie korzystałem/am</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="llmExperience">Doświadczenie z generatywną AI / LLM</label>
+          <select id="llmExperience">
+            <option value="">Wybierz…</option>
+            <option value="none">Brak</option>
+            <option value="occasional">Sporadyczne</option>
+            <option value="regular">Regularne</option>
+          </select>
+        </div>
+      </div>
+
+      <label class="checkbox-row">
+        <input id="adultConsent" type="checkbox" />
+        <span>
+          Potwierdzam, że mam co najmniej 18 lat, zapoznałem/am się z powyższą informacją
+          i chcę rozpocząć badanie.
+        </span>
+      </label>
+
+      <div class="actions">
+        <button id="startButton" class="btn btn-primary" type="button">Rozpocznij badanie</button>
+      </div>
+
+      <div id="debugPanel" class="researcher-note hidden"></div>
+    </section>
+
+    <!-- TRIAL SCREEN -->
+    <section id="trialScreen" class="card hidden">
+      <div class="progress-wrap">
+        <div class="progress-labels">
+          <span id="progressText">Zadanie 1 z 5</span>
+          <span id="participantLabel"></span>
+        </div>
+        <div class="progress-track" aria-label="Postęp badania">
+          <div id="progressBar" class="progress-bar"></div>
+        </div>
+      </div>
+
+      <div class="scenario-head">
+        <div>
+          <div class="scenario-kicker">Sytuacja komunikacyjna</div>
+          <h2 id="scenarioTitle">Scenariusz</h2>
+        </div>
+      </div>
+
+      <div id="chatContext" class="chat" aria-label="Kontekst rozmowy"></div>
+
+      <div class="instruction-box">
+        <p id="experimentInstruction"></p>
+      </div>
+
+      <div id="trialAlert" class="hidden"></div>
+
+      <!-- AI section, hidden for manual trials -->
+      <section id="aiPanel" class="ai-panel hidden">
+        <div class="ai-note">
+          <span aria-hidden="true">✦</span>
+          <div>
+            <strong>Sugestie AI-wingman</strong><br />
+            <span class="muted">
+              Poniższe propozycje zostały wygenerowane przez AI. Możesz wykorzystać jedną bez zmian,
+              edytować ją albo odrzucić wszystkie i napisać własną odpowiedź.
+            </span>
+          </div>
+        </div>
+
+        <div id="aiLoading" class="loading hidden">
+          <span class="spinner" aria-hidden="true"></span>
+          <span>Generowanie trzech sugestii…</span>
+        </div>
+
+        <div id="aiError" class="hidden"></div>
+        <div id="suggestionsGrid" class="suggestions-grid"></div>
+
+        <div id="ownAnswerWrap" class="own-answer hidden">
+          <button id="ownAnswerButton" class="btn btn-secondary" type="button">
+            Odrzuć sugestie i napisz własną odpowiedź
+          </button>
+        </div>
+      </section>
+
+      <div class="editor-wrap">
+        <div class="field">
+          <label for="finalText">Twoja finalna wiadomość</label>
+          <textarea
+            id="finalText"
+            maxlength="2000"
+            placeholder="Napisz jedną wiadomość…"
+          ></textarea>
+        </div>
+        <div class="editor-meta">
+          <span id="editorHint">Napisz odpowiedź własnymi słowami.</span>
+          <span><span id="charCounter">0</span>/2000 znaków</span>
+        </div>
+      </div>
+
+      <div id="helpfulnessBox" class="rating-box hidden">
+        <h3>Na ile sugestie systemu AI-wingman były pomocne przy przygotowaniu tej odpowiedzi?</h3>
+        <div class="rating-scale" role="radiogroup" aria-label="Ocena pomocności AI">
+          <div class="rating-option"><input type="radio" name="helpfulness" id="help1" value="1"><label for="help1">1</label></div>
+          <div class="rating-option"><input type="radio" name="helpfulness" id="help2" value="2"><label for="help2">2</label></div>
+          <div class="rating-option"><input type="radio" name="helpfulness" id="help3" value="3"><label for="help3">3</label></div>
+          <div class="rating-option"><input type="radio" name="helpfulness" id="help4" value="4"><label for="help4">4</label></div>
+          <div class="rating-option"><input type="radio" name="helpfulness" id="help5" value="5"><label for="help5">5</label></div>
+        </div>
+        <div class="rating-anchors">
+          <span>zupełnie niepomocne</span>
+          <span>bardzo pomocne</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="submitTrialButton" class="btn btn-primary" type="button">Zapisz odpowiedź i przejdź dalej</button>
+      </div>
+    </section>
+
+    <!-- FINISH -->
+    <section id="finishScreen" class="card hidden">
+      <div class="finish">
+        <div class="finish-icon">✓</div>
+        <h1>Dziękuję za udział</h1>
+        <p class="muted">
+          Wszystkie pięć odpowiedzi zostało zapisanych. Możesz teraz zamknąć tę stronę.
+        </p>
+        <p id="finishParticipant" class="muted"></p>
+
+        <div id="finishDebugActions" class="actions hidden" style="justify-content:center;">
+          <button id="clearLocalStateButton" class="btn btn-secondary" type="button">Wyczyść lokalny stan testowy</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    "use strict";
+
+    // =========================================================
+    // CONFIG
+    // =========================================================
+
+    const API_BASE = "http://127.0.0.1:8000";
+
+    // Frozen configuration required for the study.
+    // The UI refuses to start if the backend runs a different setup.
+    const EXPECTED_BACKEND = {
+      model: "gpt-4o-mini",
+      prompt_version: "experiment_prompt_v1.4",
+      guidelines_version: "guidelines_v1.4",
+      guardrail_version: "output_guardrail_v1.2",
+      protocol_version: "protocol_v1.0",
+      data_schema_version: "data_schema_v1.0",
+    };
+
+    const params = new URLSearchParams(window.location.search);
+
+    const requestedPhase = params.get("phase");
+    const STUDY_PHASE = ["pilot", "main"].includes(requestedPhase)
+      ? requestedPhase
+      : "pilot"; // Safe default: accidental local tests never become main-study data.
+
+    const FORCED_GROUP = ["A", "B"].includes(params.get("group"))
+      ? params.get("group")
+      : null;
+
+    const FORCED_ORDER = ["O1", "O2", "O3", "O4", "O5"].includes(params.get("order"))
+      ? params.get("order")
+      : null;
+
+    const DEBUG_MODE = params.get("debug") === "1";
+
+    // =========================================================
+    // STATE
+    // =========================================================
+
+    const state = {
+      participantId: null,
+      sessionId: null,
+      studyPhase: STUDY_PHASE,
+      experimentalGroup: null,
+      orderVersion: null,
+      config: null,
+      currentTrialIndex: 0,
+      trialStartedAt: null,
+      generationId: null,
+      suggestions: [],
+      selectedSuggestionId: null,
+      selectedSuggestionText: null,
+      aiChoiceMode: null, // suggestion | own
+      submitting: false,
+      generating: false,
+    };
+
+    // =========================================================
+    // DOM
+    // =========================================================
+
+    const startScreen = document.getElementById("startScreen");
+    const trialScreen = document.getElementById("trialScreen");
+    const finishScreen = document.getElementById("finishScreen");
+
+    const participantIdInput = document.getElementById("participantId");
+    const ageInput = document.getElementById("age");
+    const datingExperienceSelect = document.getElementById("datingExperience");
+    const llmExperienceSelect = document.getElementById("llmExperience");
+    const adultConsent = document.getElementById("adultConsent");
+    const startButton = document.getElementById("startButton");
+    const startAlert = document.getElementById("startAlert");
+
+    const progressText = document.getElementById("progressText");
+    const progressBar = document.getElementById("progressBar");
+    const participantLabel = document.getElementById("participantLabel");
+    const scenarioTitle = document.getElementById("scenarioTitle");
+    const chatContext = document.getElementById("chatContext");
+    const experimentInstruction = document.getElementById("experimentInstruction");
+    const trialAlert = document.getElementById("trialAlert");
+
+    const aiPanel = document.getElementById("aiPanel");
+    const aiLoading = document.getElementById("aiLoading");
+    const aiError = document.getElementById("aiError");
+    const suggestionsGrid = document.getElementById("suggestionsGrid");
+    const ownAnswerWrap = document.getElementById("ownAnswerWrap");
+    const ownAnswerButton = document.getElementById("ownAnswerButton");
+
+    const finalText = document.getElementById("finalText");
+    const charCounter = document.getElementById("charCounter");
+    const editorHint = document.getElementById("editorHint");
+    const helpfulnessBox = document.getElementById("helpfulnessBox");
+    const submitTrialButton = document.getElementById("submitTrialButton");
+
+    const finishParticipant = document.getElementById("finishParticipant");
+    const finishDebugActions = document.getElementById("finishDebugActions");
+    const clearLocalStateButton = document.getElementById("clearLocalStateButton");
+    const studyBadge = document.getElementById("studyBadge");
+    const debugPanel = document.getElementById("debugPanel");
+
+    // =========================================================
+    // HELPERS
+    // =========================================================
+
+    function setScreen(name) {
+      startScreen.classList.toggle("hidden", name !== "start");
+      trialScreen.classList.toggle("hidden", name !== "trial");
+      finishScreen.classList.toggle("hidden", name !== "finish");
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
+
+    function showAlert(element, message, type = "error") {
+      element.className = `alert alert-${type}`;
+      element.textContent = message;
+    }
+
+    function clearAlert(element) {
+      element.className = "hidden";
+      element.textContent = "";
+    }
+
+    function apiErrorMessage(payload, fallback = "Wystąpił błąd komunikacji z backendem.") {
+      if (!payload) return fallback;
+      if (typeof payload.detail === "string") return payload.detail;
+      if (payload.detail && typeof payload.detail.message === "string") return payload.detail.message;
+      if (typeof payload.message === "string") return payload.message;
+      return fallback;
+    }
+
+    async function apiFetch(path, options = {}) {
+      const response = await fetch(`${API_BASE}${path}`, {
+        ...options,
+        headers: {
+          "Content-Type": "application/json",
+          ...(options.headers || {}),
+        },
+      });
+
+      let payload = null;
+      try {
+        payload = await response.json();
+      } catch (_) {
+        payload = null;
+      }
+
+      if (!response.ok) {
+        const error = new Error(apiErrorMessage(payload));
+        error.status = response.status;
+        error.payload = payload;
+        throw error;
+      }
+
+      return payload;
+    }
+
+    async function verifyBackendReadiness() {
+      const health = await apiFetch("/api/health");
+
+      const problems = [];
+
+      if (health.status !== "ok") {
+        problems.push("backend status != ok");
+      }
+
+      if (health.experiment_mode !== true) {
+        problems.push("EXPERIMENT_MODE nie jest aktywny");
+      }
+
+      if (health.openai_configured !== true) {
+        problems.push("OpenAI API nie jest skonfigurowane");
+      }
+
+      Object.entries(EXPECTED_BACKEND).forEach(([key, expected]) => {
+        if (health[key] !== expected) {
+          problems.push(`${key}: ${health[key]} (oczekiwano ${expected})`);
+        }
+      });
+
+      if (problems.length > 0) {
+        throw new Error(
+          "Badanie zostało zablokowane: konfiguracja backendu nie odpowiada " +
+          "zamrożonemu protokołowi. " + problems.join("; ")
+        );
+      }
+
+      return health;
+    }
+
+    function makeSessionId(participantId) {
+      if (window.crypto && crypto.randomUUID) {
+        return `SESSION_${participantId}_${crypto.randomUUID()}`;
+      }
+      return `SESSION_${participantId}_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    }
+
+    function makeTrialId(participantId, trialNumber) {
+      return `${participantId}_T${String(trialNumber).padStart(2, "0")}`;
+    }
+
+    function normalizeParticipantId(value) {
+      return value.trim().toUpperCase().replace(/\s+/g, "");
+    }
+
+    function deriveMainAssignment(participantId) {
+      const match = /^P(0[1-9]|1[0-9]|20)$/.exec(participantId);
+      if (!match) return null;
+
+      const number = Number(match[1]);
+      const experimentalGroup = number <= 10 ? "A" : "B";
+      const withinGroup = number <= 10 ? number : number - 10;
+      const orderNumber = Math.ceil(withinGroup / 2);
+
+      return {
+        experimentalGroup,
+        orderVersion: `O${orderNumber}`,
+      };
+    }
+
+    function resolveAssignment(participantId) {
+      // In the MAIN study the assignment is always derived from P01–P20.
+      // URL parameters can never override the experimental allocation.
+      if (STUDY_PHASE === "main") {
+        return deriveMainAssignment(participantId);
+      }
+
+      // Pilot only: researcher may force a combination using query params.
+      if (FORCED_GROUP && FORCED_ORDER) {
+        return {
+          experimentalGroup: FORCED_GROUP,
+          orderVersion: FORCED_ORDER,
+        };
+      }
+
+      return {
+        experimentalGroup: FORCED_GROUP || "A",
+        orderVersion: FORCED_ORDER || "O1",
+      };
+    }
+
+    function storageKey(participantId) {
+      return `ai-wingman:${STUDY_PHASE}:${participantId}:state-v2`;
+    }
+
+    function saveLocalProgress() {
+      if (!state.participantId) return;
+      localStorage.setItem(
+        storageKey(state.participantId),
+        JSON.stringify({
+          participantId: state.participantId,
+          sessionId: state.sessionId,
+          currentTrialIndex: state.currentTrialIndex,
+          trialStartedAt: state.trialStartedAt,
+          completed: state.currentTrialIndex >= 5,
+        })
+      );
+    }
+
+    function loadLocalProgress(participantId) {
+      try {
+        const raw = localStorage.getItem(storageKey(participantId));
+        return raw ? JSON.parse(raw) : null;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function clearLocalProgress(participantId) {
+      if (!participantId) return;
+      localStorage.removeItem(storageKey(participantId));
+    }
+
+    function resetTrialState() {
+      state.trialStartedAt = null;
+      state.generationId = null;
+      state.suggestions = [];
+      state.selectedSuggestionId = null;
+      state.selectedSuggestionText = null;
+      state.aiChoiceMode = null;
+      state.submitting = false;
+      state.generating = false;
+
+      finalText.value = "";
+      finalText.disabled = false;
+      charCounter.textContent = "0";
+      editorHint.textContent = "Napisz odpowiedź własnymi słowami.";
+      clearAlert(trialAlert);
+      clearAlert(aiError);
+      suggestionsGrid.innerHTML = "";
+      ownAnswerWrap.classList.add("hidden");
+      helpfulnessBox.classList.add("hidden");
+      aiLoading.classList.add("hidden");
+
+      document.querySelectorAll('input[name="helpfulness"]').forEach((radio) => {
+        radio.checked = false;
+      });
+    }
+
+    function currentTrial() {
+      return state.config.trials[state.currentTrialIndex];
+    }
+
+    function getHelpfulnessRating() {
+      const checked = document.querySelector('input[name="helpfulness"]:checked');
+      return checked ? Number(checked.value) : null;
+    }
+
+    function strategyLabel(strategy) {
+      const labels = {
+        neutral: "Neutralna",
+        warm: "Życzliwa",
+        engaging: "Angażująca",
+      };
+      return labels[strategy] || strategy;
+    }
+
+    function renderContext(context) {
+      chatContext.innerHTML = "";
+
+      context.forEach((item) => {
+        const row = document.createElement("div");
+        row.className = `message-row ${item.sender === "user" ? "user" : "match"}`;
+
+        const label = document.createElement("div");
+        label.className = "message-label";
+        label.textContent = item.sender === "user" ? "Ty" : "Rozmówca";
+
+        const bubble = document.createElement("div");
+        bubble.className = "bubble";
+        bubble.textContent = item.text;
+
+        row.appendChild(label);
+        row.appendChild(bubble);
+        chatContext.appendChild(row);
+      });
+    }
+
+    function markSelectedSuggestion() {
+      document.querySelectorAll(".suggestion-card").forEach((card) => {
+        card.classList.toggle(
+          "selected",
+          card.dataset.suggestionId === state.selectedSuggestionId
+        );
+      });
+    }
+
+    function renderSuggestions(suggestions) {
+      suggestionsGrid.innerHTML = "";
+
+      suggestions.forEach((suggestion) => {
+        const card = document.createElement("article");
+        card.className = "suggestion-card";
+        card.dataset.suggestionId = suggestion.suggestion_id;
+
+        const strategy = document.createElement("div");
+        strategy.className = "strategy";
+        strategy.textContent = strategyLabel(suggestion.response_strategy);
+
+        const text = document.createElement("div");
+        text.className = "suggestion-text";
+        text.textContent = suggestion.text;
+
+        const actions = document.createElement("div");
+        actions.className = "suggestion-actions";
+
+        const useButton = document.createElement("button");
+        useButton.type = "button";
+        useButton.className = "btn btn-secondary";
+        useButton.textContent = "Użyj";
+        useButton.addEventListener("click", () => selectSuggestion(suggestion, false));
+
+        const editButton = document.createElement("button");
+        editButton.type = "button";
+        editButton.className = "btn btn-secondary";
+        editButton.textContent = "Edytuj";
+        editButton.addEventListener("click", () => selectSuggestion(suggestion, true));
+
+        actions.appendChild(useButton);
+        actions.appendChild(editButton);
+
+        card.appendChild(strategy);
+        card.appendChild(text);
+        card.appendChild(actions);
+        suggestionsGrid.appendChild(card);
+      });
+    }
+
+    function selectSuggestion(suggestion, editImmediately) {
+      state.aiChoiceMode = "suggestion";
+      state.selectedSuggestionId = suggestion.suggestion_id;
+      state.selectedSuggestionText = suggestion.text;
+      finalText.disabled = false;
+      finalText.value = suggestion.text;
+      charCounter.textContent = String(finalText.value.length);
+      editorHint.textContent = editImmediately
+        ? "Edytujesz wybraną sugestię AI."
+        : "Wybrano sugestię AI. Możesz ją pozostawić bez zmian lub zmodyfikować.";
+      markSelectedSuggestion();
+      finalText.focus();
+      if (!editImmediately) finalText.setSelectionRange(finalText.value.length, finalText.value.length);
+    }
+
+    function chooseOwnAnswer() {
+      state.aiChoiceMode = "own";
+      state.selectedSuggestionId = null;
+      state.selectedSuggestionText = null;
+      finalText.disabled = false;
+      finalText.value = "";
+      charCounter.textContent = "0";
+      editorHint.textContent = "Sugestie zostały odrzucone. Napisz własną finalną odpowiedź.";
+      markSelectedSuggestion();
+      finalText.focus();
+    }
+
+    // =========================================================
+    // REGISTRATION / START
+    // =========================================================
+
+    async function beginStudy() {
+      clearAlert(startAlert);
+
+      const participantId = normalizeParticipantId(participantIdInput.value);
+      const age = Number(ageInput.value);
+      const datingAppExperience = datingExperienceSelect.value;
+      const llmExperience = llmExperienceSelect.value;
+
+      if (!participantId) {
+        showAlert(startAlert, "Wpisz kod uczestnika.");
+        return;
+      }
+
+      if (STUDY_PHASE === "pilot" && /^P(0[1-9]|1[0-9]|20)$/.test(participantId)) {
+        showAlert(
+          startAlert,
+          "W pilotażu nie używaj kodów P01–P20 zarezerwowanych dla badania głównego. Użyj np. PILOT01 lub TEST01."
+        );
+        return;
+      }
+
+      if (!Number.isInteger(age) || age < 18 || age > 99) {
+        showAlert(startAlert, "Podaj prawidłowy wiek. Badanie jest przeznaczone dla osób pełnoletnich.");
+        return;
+      }
+
+      if (!datingAppExperience || !llmExperience) {
+        showAlert(startAlert, "Uzupełnij oba pytania dotyczące wcześniejszego doświadczenia.");
+        return;
+      }
+
+      if (!adultConsent.checked) {
+        showAlert(startAlert, "Aby rozpocząć, potwierdź pełnoletność i zgodę na udział.");
+        return;
+      }
+
+      try {
+        await verifyBackendReadiness();
+      } catch (error) {
+        console.error(error);
+        showAlert(startAlert, error.message || "Backend nie jest gotowy do badania.");
+        return;
+      }
+
+      const assignment = resolveAssignment(participantId);
+
+      if (!assignment) {
+        showAlert(
+          startAlert,
+          "W badaniu głównym kod uczestnika musi mieć format P01–P20 albo przydział musi zostać określony przez osobę prowadzącą badanie."
+        );
+        return;
+      }
+
+      startButton.disabled = true;
+      startButton.textContent = "Uruchamianie…";
+
+      try {
+        let config = null;
+
+        // First try to load an already registered participant. This supports resuming.
+        try {
+          config = await apiFetch(`/api/experiment/config/${encodeURIComponent(participantId)}`);
+        } catch (error) {
+          if (error.status !== 404) throw error;
+        }
+
+        if (!config) {
+          await apiFetch("/api/participants", {
+            method: "POST",
+            body: JSON.stringify({
+              participant_id: participantId,
+              study_phase: STUDY_PHASE,
+              experimental_group: assignment.experimentalGroup,
+              order_version: assignment.orderVersion,
+              age,
+              dating_app_experience: datingAppExperience,
+              llm_experience: llmExperience,
+            }),
+          });
+
+          config = await apiFetch(`/api/experiment/config/${encodeURIComponent(participantId)}`);
+        }
+
+        state.participantId = participantId;
+        state.studyPhase = config.study_phase;
+        state.experimentalGroup = config.experimental_group;
+        state.orderVersion = config.order_version;
+        state.config = config;
+
+        const saved = loadLocalProgress(participantId);
+        state.sessionId = saved?.sessionId || makeSessionId(participantId);
+
+        // Backend data are the source of truth. This allows safe resume
+        // after refresh, browser restart or use of another browser.
+        const progress = await apiFetch(
+          `/api/experiment/progress/${encodeURIComponent(participantId)}`
+        );
+
+        state.currentTrialIndex = Math.min(
+          Math.max(Number(progress.next_trial_index) || 0, 0),
+          5
+        );
+
+        state.trialStartedAt = (
+          saved &&
+          saved.currentTrialIndex === state.currentTrialIndex
+        )
+          ? (saved.trialStartedAt || null)
+          : null;
+
+        saveLocalProgress();
+
+        if (state.currentTrialIndex >= 5) {
+          showFinish();
+        } else {
+          setScreen("trial");
+          renderTrial();
+        }
+      } catch (error) {
+        console.error(error);
+        showAlert(startAlert, error.message || "Nie udało się rozpocząć badania.");
+      } finally {
+        startButton.disabled = false;
+        startButton.textContent = "Rozpocznij badanie";
+      }
+    }
+
+    // =========================================================
+    // TRIAL RENDERING / GENERATION
+    // =========================================================
+
+    async function renderTrial() {
+      const savedBeforeReset = loadLocalProgress(state.participantId);
+      resetTrialState();
+
+      const trial = currentTrial();
+      const trialNumber = trial.trial_number;
+
+      if (
+        savedBeforeReset &&
+        savedBeforeReset.currentTrialIndex === state.currentTrialIndex &&
+        savedBeforeReset.trialStartedAt
+      ) {
+        state.trialStartedAt = savedBeforeReset.trialStartedAt;
+      } else {
+        state.trialStartedAt = new Date().toISOString();
+      }
+
+      saveLocalProgress();
+
+      progressText.textContent = `Zadanie ${trialNumber} z 5`;
+      progressBar.style.width = `${((trialNumber - 1) / 5) * 100}%`;
+      participantLabel.textContent = `Kod: ${state.participantId}`;
+      scenarioTitle.textContent = trial.title;
+      experimentInstruction.textContent = state.config.instruction;
+      renderContext(trial.context);
+
+      if (trial.assigned_condition === "ai_assisted") {
+        aiPanel.classList.remove("hidden");
+        finalText.disabled = true;
+        submitTrialButton.disabled = true;
+        finalText.placeholder = "Najpierw zaczekaj na sugestie AI…";
+        editorHint.textContent = "Po wyświetleniu sugestii wybierz jedną z nich albo zdecyduj się na własną odpowiedź.";
+        helpfulnessBox.classList.add("hidden");
+        await generateSuggestionsForCurrentTrial();
+      } else {
+        submitTrialButton.disabled = false;
+        aiPanel.classList.add("hidden");
+        finalText.disabled = false;
+        finalText.placeholder = "Napisz jedną wiadomość…";
+        editorHint.textContent = "Napisz odpowiedź własnymi słowami.";
+        finalText.focus();
+      }
+    }
+
+    async function generateSuggestionsForCurrentTrial() {
+      if (state.generating) return;
+
+      const trial = currentTrial();
+      const trialId = makeTrialId(state.participantId, trial.trial_number);
+
+      state.generating = true;
+      aiLoading.classList.remove("hidden");
+      suggestionsGrid.innerHTML = "";
+      ownAnswerWrap.classList.add("hidden");
+      clearAlert(aiError);
+
+      try {
+        const data = await apiFetch("/api/suggestions", {
+          method: "POST",
+          body: JSON.stringify({
+            participant_id: state.participantId,
+            session_id: state.sessionId,
+            trial_id: trialId,
+            trial_number: trial.trial_number,
+            experimental_group: state.experimentalGroup,
+            order_version: state.orderVersion,
+            scenario_id: trial.scenario_id,
+          }),
+        });
+
+        state.generationId = data.generation_id;
+        state.suggestions = data.suggestions || [];
+
+        if (state.suggestions.length !== 3) {
+          throw new Error("Backend nie zwrócił trzech kompletnych sugestii.");
+        }
+
+        renderSuggestions(state.suggestions);
+        ownAnswerWrap.classList.remove("hidden");
+        helpfulnessBox.classList.remove("hidden");
+        submitTrialButton.disabled = false;
+      } catch (error) {
+        console.error(error);
+        submitTrialButton.disabled = true;
+        helpfulnessBox.classList.add("hidden");
+        showAlert(aiError, error.message || "Nie udało się wygenerować sugestii.");
+
+        const retry = document.createElement("button");
+        retry.type = "button";
+        retry.className = "btn btn-secondary";
+        retry.textContent = "Spróbuj ponownie";
+        retry.style.marginTop = "10px";
+        retry.addEventListener("click", generateSuggestionsForCurrentTrial);
+        aiError.appendChild(document.createElement("br"));
+        aiError.appendChild(retry);
+      } finally {
+        state.generating = false;
+        aiLoading.classList.add("hidden");
+      }
+    }
+
+    // =========================================================
+    // SUBMIT TRIAL
+    // =========================================================
+
+    function resolveFinalAction(trial) {
+      if (trial.assigned_condition === "manual") {
+        return "manual";
+      }
+
+      if (state.aiChoiceMode === "own") {
+        return "reject_and_write_own";
+      }
+
+      if (state.aiChoiceMode === "suggestion" && state.selectedSuggestionId) {
+        const finalNormalized = finalText.value.trim();
+        const selectedNormalized = (state.selectedSuggestionText || "").trim();
+        return finalNormalized === selectedNormalized ? "use" : "edit";
+      }
+
+      return null;
+    }
+
+    async function submitCurrentTrial() {
+      if (state.submitting) return;
+      clearAlert(trialAlert);
+
+      const trial = currentTrial();
+      const text = finalText.value.trim();
+
+      if (!text) {
+        showAlert(trialAlert, "Wpisz finalną wiadomość przed przejściem dalej.");
+        finalText.focus();
+        return;
+      }
+
+      const finalAction = resolveFinalAction(trial);
+
+      if (!finalAction) {
+        showAlert(
+          trialAlert,
+          "Wybierz jedną z sugestii AI do użycia/edycji albo wybierz opcję napisania własnej odpowiedzi."
+        );
+        return;
+      }
+
+      const helpfulness = trial.assigned_condition === "ai_assisted"
+        ? getHelpfulnessRating()
+        : null;
+
+      if (trial.assigned_condition === "ai_assisted" && helpfulness === null) {
+        showAlert(trialAlert, "Przed przejściem dalej oceń pomocność sugestii AI w skali 1–5.");
+        helpfulnessBox.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
+
+      const trialId = makeTrialId(state.participantId, trial.trial_number);
+
+      const payload = {
+        participant_id: state.participantId,
+        session_id: state.sessionId,
+        trial_id: trialId,
+        trial_number: trial.trial_number,
+        experimental_group: state.experimentalGroup,
+        order_version: state.orderVersion,
+        scenario_id: trial.scenario_id,
+        final_action: finalAction,
+        generation_id: trial.assigned_condition === "ai_assisted" ? state.generationId : null,
+        selected_suggestion_id:
+          ["use", "edit"].includes(finalAction) ? state.selectedSuggestionId : null,
+        final_text: text,
+        author_helpfulness_rating:
+          trial.assigned_condition === "ai_assisted" ? helpfulness : null,
+        started_at: state.trialStartedAt,
+      };
+
+      state.submitting = true;
+      submitTrialButton.disabled = true;
+      submitTrialButton.textContent = "Zapisywanie…";
+
+      try {
+        await apiFetch("/api/trials", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+
+        advanceAfterSavedTrial();
+      } catch (error) {
+        console.error(error);
+
+        // If the backend confirms the trial already exists, assume the POST succeeded
+        // before a refresh/network interruption and advance locally instead of duplicating data.
+        if (error.status === 409 && /already been saved/i.test(error.message)) {
+          showAlert(
+            trialAlert,
+            "Ta próba była już zapisana. Przywrócono postęp i przechodzę dalej.",
+            "warning"
+          );
+          setTimeout(advanceAfterSavedTrial, 500);
+          return;
+        }
+
+        showAlert(trialAlert, error.message || "Nie udało się zapisać odpowiedzi.");
+      } finally {
+        state.submitting = false;
+        submitTrialButton.disabled = false;
+        submitTrialButton.textContent = "Zapisz odpowiedź i przejdź dalej";
+      }
+    }
+
+    function advanceAfterSavedTrial() {
+      state.currentTrialIndex += 1;
+      state.trialStartedAt = null;
+      saveLocalProgress();
+
+      if (state.currentTrialIndex >= 5) {
+        showFinish();
+      } else {
+        renderTrial();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }
+
+    function showFinish() {
+      state.currentTrialIndex = 5;
+      saveLocalProgress();
+      setScreen("finish");
+      finishParticipant.textContent = `Kod uczestnika: ${state.participantId}`;
+      finishDebugActions.classList.toggle("hidden", !DEBUG_MODE);
+      progressBar.style.width = "100%";
+    }
+
+    // =========================================================
+    // EVENTS
+    // =========================================================
+
+    startButton.addEventListener("click", beginStudy);
+    submitTrialButton.addEventListener("click", submitCurrentTrial);
+    ownAnswerButton.addEventListener("click", chooseOwnAnswer);
+
+    finalText.addEventListener("input", () => {
+      charCounter.textContent = String(finalText.value.length);
+    });
+
+    clearLocalStateButton.addEventListener("click", () => {
+      if (!state.participantId) return;
+      clearLocalProgress(state.participantId);
+      alert("Lokalny stan został wyczyszczony. Dane zapisane w backendzie nie zostały usunięte.");
+    });
+
+    window.addEventListener("beforeunload", (event) => {
+      if (!trialScreen.classList.contains("hidden") && state.currentTrialIndex < 5) {
+        event.preventDefault();
+        event.returnValue = "";
+      }
+    });
+
+    // =========================================================
+    // INITIAL UI
+    // =========================================================
+
+    studyBadge.textContent = STUDY_PHASE === "main"
+      ? "Badanie główne"
+      : "Pilotaż techniczny";
+
+    if (DEBUG_MODE) {
+      debugPanel.classList.remove("hidden");
+      debugPanel.innerHTML = `
+        <strong>Tryb badacza:</strong>
+        phase=<code>${STUDY_PHASE}</code>,
+        forced group=<code>${STUDY_PHASE === "pilot" ? (FORCED_GROUP || "auto") : "disabled in main"}</code>,
+        forced order=<code>${STUDY_PHASE === "pilot" ? (FORCED_ORDER || "auto") : "disabled in main"}</code>.<br>
+        Pilotaż: <code>?phase=pilot&group=A&order=O1&debug=1</code><br>
+        Badanie główne: <code>?phase=main&debug=1</code> + kody P01–P20.
+      `;
+    }
+
+    setScreen("start");
+  </script>
+</body>
+</html>

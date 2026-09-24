@@ -1,0 +1,7 @@
+﻿assigned_condition,sentiment,n,proportion
+manual,negative,0,0.0
+manual,neutral,41,0.82
+manual,positive,9,0.18
+ai_assisted,negative,1,0.02
+ai_assisted,neutral,39,0.78
+ai_assisted,positive,10,0.2
